@@ -23,8 +23,10 @@
 #5D  Add collison to player and keys and entity - FINALLY just had to master the turtorial lol https://www.raylib.com/examples/models/loader.html?name=models_box_collisions - now on to keys - that is done but it was lazy
 #We got the brick texture from here https://www.reddit.com/r/PixelArt/comments/rrjmvl/simple_32x32_brick_wall_pattern_im_gonna_go/
 #6D  Make it so that wehenever the map changes the keys location change too - just had to make it a function wasnt too hard honestly
-#7  Add models to the keysD, player and enemy entity
+#7  Add models to the keysD, player and chaser entity
 #8  Add new ways to move camera for no mouse people 
+#Lore:
+#You've been invited to inside a house, then a basement thats flooded, a maze in the pouring rain, then other places
 
 
 #Import
@@ -46,7 +48,7 @@ cnl_4 = pg.mixer.Channel(3) # Extra
 async def main():
     pr.init_window(800, 600, "Hunted")
     pr.init_audio_device()
-    map = 1
+    map = 0
     local = 0 #0 is against ai or online and 1 is agianst freind
     pr.rl_set_line_width(3) #this even important
     #Sounds
@@ -84,14 +86,14 @@ async def main():
             rains.append(new_rain)
     #Load the texture
     # floor
-    floor_mesh = pr.gen_mesh_plane(maze.size*2, maze.size*2, 1, 1)
+    floor_mesh = pr.gen_mesh_plane(maze.size, maze.size, 1, 1)
     floor_model = pr.load_model_from_mesh(floor_mesh)
-    floor_texture = pr.load_texture("assests/grass.png")
+    floor_texture = pr.load_texture("assests/floor_wood.jpeg")
     floor_model.materials[0].maps[pr.MATERIAL_MAP_DIFFUSE].texture = floor_texture
     # walls
     cube_mesh = pr.gen_mesh_cube(1, 1.5, 1)
     cube_model = pr.load_model_from_mesh(cube_mesh)
-    cube_texture = pr.load_texture("assests/hedges.jpeg")
+    cube_texture = pr.load_texture("assests/wood.jpeg")
     cube_model.materials[0].maps[pr.MATERIAL_MAP_DIFFUSE].texture = cube_texture
     #Title
     game_state = "title"
@@ -117,15 +119,6 @@ async def main():
         #Fullscreen
         if pr.is_key_pressed(pr.KEY_F):
             pr.toggle_fullscreen()
-        #Sky 
-        if (map == 1):
-            pr.clear_background(pr.BLACK)
-        if (map == 2):
-            pr.clear_background(pr.LIGHTGRAY)
-        if (map == 3):
-            pr.clear_background(pr.DARKBROWN)
-        if (map == 4):
-            pr.clear_background(pr.RED)
         #Title screen
         if (game_state == "title"):
             if (title_part == 0):   
@@ -142,14 +135,15 @@ async def main():
                 title_part = 2
                 pt_2_a = 0
             if (title_part == 2): 
-                #Rain
-                rain_cc += 1
-                if (rain_cc > rain_add_inc):
-                    new_rain = Rain()
-                    rains.append(new_rain)
-                    rain_cc = 0
-                for r in rains:
-                    r.update()
+                if (map == 1):
+                    #Rain
+                    rain_cc += 1
+                    if (rain_cc > rain_add_inc):
+                        new_rain = Rain()
+                        rains.append(new_rain)
+                        rain_cc = 0
+                    for r in rains:
+                        r.update()
                 #Thunder animation
                 pt_2_col = pr.fade(pr.WHITE, pt_2_a)
                 pt_2_a -= 0.35 * pr.get_frame_time()
@@ -199,6 +193,15 @@ async def main():
 
         #Game
         if (game_state == "play"):
+            #Sky 
+            if (map == 0): #House
+                pr.clear_background(pr.DARKBROWN)
+            if (map == 1): #Basement
+                pr.clear_background(pr.LIGHTGRAY)
+            if (map == 2): #Outside maze
+                pr.clear_background(pr.BLACK)
+            if (map == 3): #Hell (temp)
+                pr.clear_background(pr.RED)
             #Effects
             #UI
             # Timer
@@ -220,19 +223,20 @@ async def main():
             pr.begin_mode_3d(camera_1)
             #Specific map stuff
             # Moon
-            if (map == 1):
+            if (map == 2): 
                 pr.draw_sphere(pr.Vector3(10, 50, 5), 2, pr.Color(250, 250, 250, 255))
             #World
             #pr.draw_grid(maze.size*10, 0) #adjust last variable by decimals for borders on ground
             # Floor - Both texure and no texture
-            if (map == 1):
+            if (map == 0): #House
+                #pr.draw_plane((0, 0.01, 0), (maze.size*2, maze.size*2), pr.DARKBROWN)
+                pr.draw_model(floor_model, (7, 0.01, 7), 1.0, pr.DARKBROWN)
+            if (map == 1): #Basement
+                pr.draw_plane((0, -0.01, 0), (maze.size*2, maze.size*2), pr.DARKBLUE)
+            if (map == 2): #Outside maze
                 pr.draw_model(floor_model, (0, 0.01, 0), 1.0, pr.DARKGREEN)
-            if (map == 2):
-                pr.draw_plane((0, -0.01, 0), (maze.size*2, maze.size*2), pr.ORANGE)
-            if (map == 3):
-                pr.draw_plane((0, -0.01, 0), (maze.size*2, maze.size*2), pr.DARKBROWN)
-            if (map == 4):
-                pr.draw_model(floor_model, (1, 1, 1), 1.0, pr.RED)
+            if (map == 3): #Hell (temp)
+                pr.draw_model(floor_model, (1, 0.01, 1), 1.0, pr.RED) # floor wasnt showing cause of a y issue
             #Other (thing, player, ai)
             enemy.update(player_1, chase_msc)
             #Sound Effects
@@ -241,17 +245,17 @@ async def main():
             for i in range(maze.size):
                 for j in range(maze.size):
                     if (maze.maze[i][j] != 0):
-                        #Walls - The texture and color tint
-                        if (map == 1):
-                            pr.draw_cube((i+0.5, 0.5, j + 0.5), 1, 1.5, 1, pr.GREEN)#maze.colors[i][j])
+                        #Walls - Texture, cube and color tint
+                        if (map == 0): #House
+                            pr.draw_cube((i+0.5, 0.5, j + 0.5), 1, 1.5, 1, pr.BROWN) #maze.colors[i][j])
+                            pr.draw_model(cube_model, (i + 0.5, 0.5, j + 0.5), 1.1, pr.BROWN)
+                        if (map == 1): #Basement
+                            pr.draw_cube((i+0.5, 0.5, j + 0.5), 1, 1.5, 1, pr.WHITE)
+                            pr.draw_model(cube_model, (i + 0.5, 0.5, j + 0.5), 1.1, pr.WHITE)
+                        if (map == 2): #Outside maze
+                            pr.draw_cube((i+0.5, 0.5, j + 0.5), 1, 1.5, 1, pr.GREEN)
                             pr.draw_model(cube_model, (i + 0.5, 0.5, j + 0.5), 1.1, pr.GREEN)
-                        if (map == 2):
-                            pr.draw_cube((i+0.5, 0.5, j + 0.5), 1, 1.5, 1, pr.WHITE)
-                            pr.draw_model(cube_model, (i + 0.5, 0.5, j + 0.5), 1.1, pr.WHITE)
-                        if (map == 3):
-                            pr.draw_cube((i+0.5, 0.5, j + 0.5), 1, 1.5, 1, pr.WHITE)
-                            pr.draw_model(cube_model, (i + 0.5, 0.5, j + 0.5), 1.1, pr.WHITE)
-                        if (map == 4):
+                        if (map == 3): #Hell (temp)
                             pr.draw_cube((i+0.5, 0.5, j + 0.5), 1, 1.5, 1, pr.RED)
                             pr.draw_model(cube_model, (i + 0.5, 0.5, j + 0.5), 1.1, pr.RED)
                         # Wall Shaders
@@ -296,30 +300,30 @@ async def main():
             if (keys_got == 3): # Testing has it at 1 og is 3
                 map += 1
                 # Change texture to Brick
-                if (map == 2):
+                if (map == 1):
                     # walls
                     cube_mesh = pr.gen_mesh_cube(1, 1.5, 1)
                     cube_model = pr.load_model_from_mesh(cube_mesh)
                     cube_texture = pr.load_texture("assests/brick.jpg")
                     cube_model.materials[0].maps[pr.MATERIAL_MAP_DIFFUSE].texture = cube_texture
-                # Change texture to Wood
-                if (map == 3):
+                # Change texture to Hedge
+                if (map == 2):
                     # floor
                     floor_mesh = pr.gen_mesh_plane(maze.size*2, maze.size*2, 1, 1)
                     floor_model = pr.load_model_from_mesh(floor_mesh)
-                    floor_texture = pr.load_texture("assests/wood.jpeg")
+                    floor_texture = pr.load_texture("assests/grass.png")
                     floor_model.materials[0].maps[pr.MATERIAL_MAP_DIFFUSE].texture = floor_texture
                     # walls
                     cube_mesh = pr.gen_mesh_cube(1, 1.5, 1)
                     cube_model = pr.load_model_from_mesh(cube_mesh)
-                    cube_texture = pr.load_texture("assests/wood.jpeg")
+                    cube_texture = pr.load_texture("assests/hedges.jpeg")
                     cube_model.materials[0].maps[pr.MATERIAL_MAP_DIFFUSE].texture = cube_texture
                 # Change texture to Flesh
-                if (map == 4):
+                if (map == 3):
                     # floor
                     floor_mesh = pr.gen_mesh_plane(maze.size*2, maze.size*2, 1, 1)
                     floor_model = pr.load_model_from_mesh(floor_mesh)
-                    floor_texture = pr.load_texture("assests/muscle.jpeg")
+                    floor_texture = pr.load_texture("assests/muscle.jpg")
                     floor_model.materials[0].maps[pr.MATERIAL_MAP_DIFFUSE].texture = floor_texture
                     # walls
                     cube_mesh = pr.gen_mesh_cube(1, 1.5, 1)
@@ -360,7 +364,7 @@ async def main():
                 player_1.hud(keys_got, timer, time_col, local) 
                 #Rain
                 # spawn rain
-                if (map == 1):
+                if (map == 2):
                     rain_cc += 1
                     if (rain_cc > rain_add_inc):
                         new_rain = Rain()
@@ -369,9 +373,9 @@ async def main():
                     for r in rains:
                         r.update()
                 #Brightness
-                if (map == 1) or (map == 4):
+                if (map == 2) or (map == 3):
                     pr.draw_rectangle(0, 0, pr.get_screen_width(), pr.get_screen_height(), pr.fade(pr.BLACK, 0.5))
-                if (map == 3):
+                if (map == 1):
                     pr.draw_rectangle(0, 0, pr.get_screen_width(), pr.get_screen_height(), pr.fade(pr.BLACK, 0.3))
 
             # Local is True
@@ -388,7 +392,7 @@ async def main():
                 player_1.hud(keys_got, timer, time_col, local) 
                 #Rain
                 # spawn rain
-                if (map == 1):
+                if (map == 2):
                     rain_cc += 1
                     if (rain_cc > rain_add_inc):
                         new_rain = Rain()
@@ -397,9 +401,9 @@ async def main():
                     for r in rains:
                         r.update()
                 #Brightness
-                if (map == 1) or (map == 4):
+                if (map == 2) or (map == 3):
                     pr.draw_rectangle(0, 0, pr.get_screen_width(), pr.get_screen_height(), pr.fade(pr.BLACK, 0.5))
-                if (map == 3):
+                if (map == 1):
                     pr.draw_rectangle(0, 0, pr.get_screen_width(), pr.get_screen_height(), pr.fade(pr.BLACK, 0.3))
                 # Player 2 "chaser"
                 pr.begin_scissor_mode(int(split_2.x), int(split_2.y), int(split_2.width), int(split_2.height))
