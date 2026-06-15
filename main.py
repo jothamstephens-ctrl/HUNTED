@@ -169,6 +169,7 @@ async def main():
                 # Words
                 pr.draw_text(f"3 Ai", 20, 150, 30, pr.WHITE)
                 pr.draw_text(f"4 Co-Op", 20, 190, 30, pr.WHITE)
+                pr.draw_text(f"5 Back", 20, 230, 30, pr.WHITE)
                 # AI
                 if (pr.is_key_down(pr.KEY_THREE)):
                     local = 0
@@ -183,13 +184,20 @@ async def main():
                     split_1 = pr.Rectangle(int(0), int(0), int(pr.get_screen_width()/2.0), int(pr.get_screen_height()))
                     camera_1 = pr.Camera3D((0, 0.5, 0), (1, 0.5, 1), (0, 1, 0), 45, pr.CAMERA_PERSPECTIVE)
                     split_2 = pr.Rectangle(int(pr.get_screen_width()/2.0), int(0), int(pr.get_screen_width()/2.0), int(pr.get_screen_height()))
-                    camera_2 = pr.Camera3D((0, 0.5, 0), (1, 0.5, 1), (0, 1, 0), 45, pr.CAMERA_PERSPECTIVE)
+                    camera_2 = pr.Camera3D((0, 1, 0), (1, 1, 0), (1, 1, 1), 45, pr.CAMERA_PERSPECTIVE)
                     player_1.hud(keys_got, timer, time_col, local) #needs to be here for some reason - still not working
                     game_state = "play"
+                # Go back
+                if (pr.is_key_down(pr.KEY_FIVE)):
+                    title_part =2
             #Online title menu
             if (title_part == 4):
-                 # Title
-                 pr.draw_text(f"Online", int(pr.get_screen_width()/2) - 150, 20, 100, pr.WHITE)
+                # Title
+                pr.draw_text(f"Online", int(pr.get_screen_width()/2) - 150, 20, 100, pr.WHITE)
+                pr.draw_text(f"5 Back", 20, 150, 30, pr.WHITE)
+                # Go back
+                if (pr.is_key_down(pr.KEY_FIVE)):
+                    title_part = 5
 
         #Game
         if (game_state == "play"):
@@ -413,8 +421,8 @@ async def main():
                 camera_2.target = pr.vector3_add(enemy.pos, pr.Vector3(3, 5, 0))
                 pr.end_mode_3d()
 
-        #End scissoring (hahaha) screen 
-        pr.end_scissor_mode()
+                #End scissoring (hahaha) screen 
+                pr.end_scissor_mode()
 
         pr.end_drawing()
         await asyncio.sleep(0)
